@@ -1,0 +1,34 @@
+name: Release APK
+
+on:
+  push:
+    branches:
+      - master  # 当往 master 分支 push 时触发
+
+jobs:
+  release:
+    runs-on: ubuntu-latest  # 使用最新的 Ubuntu 环境
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Find APK files
+        id: find-apk
+        run: |
+          APK_PATH=$(find unpackage/release/apk -name "*.apk" | head -n 1)
+          if [ -z "$APK_PATH" ]; then
+            echo "No APK file found!"
+            exit 1
+          fi
+          echo "APK_PATH=$APK_PATH" >> $GITHUB_ENV
+          echo "APK_NAME=$(basename $APK_PATH)" >> $GITHUB_ENV
+
+      - name: Upload APK to Releases
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ env.APK_PATH }}
+          tag_name: v$(date +'%Y.%m.%d')
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
